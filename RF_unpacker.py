@@ -11,12 +11,19 @@ __maintainer__ = "Snownoise"
 __email__ = "snownoise@gmail.com"
 
 import re
+import datetime
+import argparse
+import pyexcel_ods3
+from collections import OrderedDict
+from RF_parcer_classes import *
 
 # Init and config variables
-cfg_inputfile = "StockAlike_StockRevamp.cfg"
+cfg_inputfile = ""
+cfg_outputfile = ""
 main_data = []  # Main text data from config
 parced = []     # Parced data
-depth = 0      # Depth
+toExport = []   # List with exported data
+depth = 0       # Depth
 
 MODE_PART = 1
 MODE_MODULEENGINES = 2
@@ -31,221 +38,6 @@ MODE_MODULEFUELTANK = 10
 MODE_MODULETANKCONTENT = 11
 MODE_GENERICMODULE = 99
 
-class ModuleEngineIgnitorClass:
-    """
-    ModuleEngineIgnitor generic configuration class (for engine's default configuration)
-    """
-
-    def __init__(self):
-        self.ignitionsAvailable = -1
-        self.autoIgnitionTemperature = -1
-        self.useUllageSimulation = False
-        self.ignitorType = "Electric"
-        self.ignitorElectricChargeAmount = -1
-
-    def __str__(self):
-        seq = ("\t *** MODULE_ENGINE_IGNITOR ***",
-               "\t\t\tignitionsAvailable = " + str(self.ignitionsAvailable),
-               "\t\t\tautoIgnitionTemperature = " + str(self.autoIgnitionTemperature),
-               "\t\t\tuseUllageSimulation = " + str(self.useUllageSimulation),
-               "\t\t\tignitorType = " + str(self.ignitorType),
-               "\t\t\tignitorElectricChargeAmount = " + str(self.ignitorElectricChargeAmount))
-
-        return '\n'.join(seq)
-
-class ModuleFuelTanksClass:
-    """
-    RealFuels ModuleFuelTanks configuration class
-    """
-
-    def __init__(self):
-        self.basemass = -1024   # I usually use -1 to signal that parameter is absent in config, but in this case -1 is an actual parameter used by RF
-        self.volume = -1
-        self.type = "Default"
-        self.tanks = []
-
-    def __str__(self):
-        seq = ["\t *** MODULE_FUEL_TANKS ***",
-               "\t\tbasemass = " + str(self.basemass),
-               "\t\tvolume = " + str(self.volume),
-               "\t\ttype = " + str(self.type)]
-        for tank in self.tanks:
-            seq.append(str(tank))
-        return '\n'.join(seq)
-
-class ModuleFuelTankInternal:
-    """
-    Definition for internal 'TANK' submodule in ModuleFuelTanks
-    """
-
-    def __init__(self):
-        self.name = ""
-        self.amount = ""
-        self.maxAmount = 0.0    # This is percentage! % sign should be added to final config
-
-    def __str__(self):
-        seq = ("\t\t\tname = " + str(self.name),
-               "\t\t\tamount = " + str(self.amount),
-               "\t\t\tmaxAmount = " + str(self.maxAmount))
-        return '\n'.join(seq)
-
-
-class ModuleEngineClass:
-    """
-    RealFuels ModuleEngine / ModuleEngineRF configuration class
-    """
-
-    def __init__(self):
-        self.maxThrust = -1
-        self.heatProduction = -1
-        self.atmoCurveKey0 = -1
-        self.atmoCurveKey1 = -1
-        self.propellants = []
-
-
-    def __str__(self):
-        seq = ["\t *** MODULE_ENGINE_RF ***",
-               "\t\tmaxThrust = " + str(self.maxThrust),
-               "\t\theatProduction = " + str(self.heatProduction),
-               "\t\t\tkey0 = " + str(self.atmoCurveKey0),
-               "\t\t\tkey1 = " + str(self.atmoCurveKey1)]
-        for propellant in self.propellants:
-            seq.append(str(propellant))
-        return '\n'.join(seq)
-
-class PropellantClass:
-    """
-    RealFuels propellant class
-    """
-
-    def __init__(self):
-        self.name = "none"
-        self.ratio = -1.0
-        self.drawGauge = False
-        self.flowMode = "none"
-
-    def __str__(self):
-        seq = ("\t\t *** PROPELLANT ***",
-               "\t\t\t\tname = " + str(self.name),
-               "\t\t\t\tratio = " + str(self.ratio),
-               "\t\t\t\tdrawGauge = " + str(self.drawGauge),
-               "\t\t\t\tflowMode = " + str(self.flowMode))
-        return '\n'.join(seq)
-
-class ModuleRCSClass:
-    """
-    Modification of stock Squad ModuleRCS in configs
-    """
-
-    def __init__(self):
-        self.thrusterPower = -1
-        self.heatProduction = -1
-        self.atmoCurveKey0 = -1
-        self.atmoCurveKey1 = -1
-        self.propellants = []
-
-
-    def __str__(self):
-        seq = ["\t *** MODULE_RCS ***",
-               "\t\tthrusterPower = " + str(self.thrusterPower),
-               "\t\theatProduction = " + str(self.heatProduction),
-               "\t\t\tkey0 = " + str(self.atmoCurveKey0),
-               "\t\t\tkey1 = " + str(self.atmoCurveKey1)]
-        for propellant in self.propellants: seq.append(str(propellant))
-        return '\n'.join(seq)
-
-
-class ModuleEngineConfigsClass:
-    """
-    RealFuels ModuleEngineConfigs class definition
-    """
-
-    def __init__(self):
-        self.techLevel = -1
-        self.origTechLevel = -1
-        self.type = "ModuleEnginesRF"
-        self.engineType = "None"
-        self.origMass = -1.0
-        self.defaultConfiguration = "None"
-        self.modded = False
-        self.configurations = []
-
-    def __str__(self):
-        seq = ["\t *** MODULE_ENGINE_CONFIGS ***",
-               "\t\ttechLevel = " + str(self.techLevel),
-               "\t\torigTechLevel = " + str(self.origTechLevel),
-               "\t\ttype = " + str(self.type),
-               "\t\tengineType = " + str(self.engineType),
-               "\t\torigMass = " + str(self.origMass),
-               "\t\tdefaultConfiguration = " + str(self.defaultConfiguration),
-               "\t\tmodded = " + str(self.modded)]
-        for configuration in self.configurations:
-            seq.append(str(configuration))
-        return '\n'.join(seq)
-
-class EngineConfigClass():
-    """
-    Engine config (CONFIG module) class
-    """
-
-    def __init__(self):
-        self.name = "none"
-        self.maxThrust = -1.0
-        self.heatProduction = False
-        self.ispSL = -1.0
-        self.ispV = -1.0
-        self.throttle = -1
-        self.thrusterPower = -1
-        self.propellants = []
-        self.moduleEngineIgnitor = None
-
-    def __str__(self):
-        seq = ["\t *** ENGINE CONFIG ***",
-               "\t\t\tName = " + str(self.name),
-               "\t\t\tmaxThrust = " + str(self.maxThrust),
-               "\t\t\theatProduction = " + str(self.heatProduction),
-               "\t\t\tIspSL = " + str(self.ispSL),
-               "\t\t\tIspV = " + str(self.ispV),
-               "\t\t\tthrusterPower = " + str(self.thrusterPower),
-               "\t\t\tthrottle = " + str(self.throttle)]
-        for propellant in self.propellants:
-            seq.append(str(propellant))
-        if self.moduleEngineIgnitor: seq.append(str(self.moduleEngineIgnitor))
-        return '\n'.join(seq)
-
-class PartClass:
-    """
-    Main class for generic parts
-    """
-
-    def __init__(self, name = "none", comment = "", mass = -1, cost = -1, entryCost = -1, maxTemp = -1):
-        self.name = name
-        self.comment = comment
-        self.mass = mass
-        self.cost = cost
-        self.entryCost = entryCost
-        self.maxTemp = maxTemp
-        self.moduleEngine = None
-        self.moduleRCS = None
-        self.moduleEngineConfigsModule = None
-        self.moduleEngineIgnitor = None
-        self.moduleFuelTank = None
-
-    def __str__(self):
-        seq = ["\n\n*** PART PART PART ***",
-               "name = " + str(self.name),
-               "\tcomment = " + str(self.comment),
-               "\tmass = " + str(self.mass),
-               "\tcost = " + str(self.cost),
-               "\tentryCost = " + str(self.entryCost),
-               "\tmaxTemp = " + str(self.maxTemp)]
-        if self.moduleEngine: seq.append(str(self.moduleEngine))
-        if self.moduleRCS: seq.append(str(self.moduleRCS))
-        if self.moduleEngineConfigsModule: seq.append(str(self.moduleEngineConfigsModule))
-        if self.moduleEngineIgnitor: seq.append(str(self.moduleEngineIgnitor))
-        if self.moduleFuelTank: seq.append(str(self.moduleFuelTank))
-
-        return '\n'.join(seq)
 
 def parcer(input_data, previous_line, previous_mode):
     global depth, parced
@@ -414,8 +206,8 @@ def parcer(input_data, previous_line, previous_mode):
             temp_value = temp_value.lower()
             if temp_value == "electriccharge": flag_electric_ignitor = True
 
-        elif regex_amount.findall(line) and mode == MODE_IGNITORRESOURCE and flag_electric_ignitor:
-            temp_value = regex_amount.findall(line)[0][0]
+        elif regex_ECamount.findall(line) and mode == MODE_IGNITORRESOURCE and flag_electric_ignitor:
+            temp_value = regex_ECamount.findall(line)[0][0]
             part = float(temp_value)
 
         ### ****************************************************
@@ -521,6 +313,7 @@ def parcer(input_data, previous_line, previous_mode):
             temp_value = regex_modded.findall(line)[0]
             part.modded = str(temp_value)
 
+
         ### ****************************************************
         ### CONFIG
         ### ****************************************************
@@ -598,9 +391,6 @@ def parcer(input_data, previous_line, previous_mode):
         num += 1
 
 
-
-
-
 # Compiling regex'es for later use
 # Names are self-explanatory
 regex_part_name = re.compile(r'^@PART\[([a-zA-Z0-9_-]+)\]', re.IGNORECASE)
@@ -629,7 +419,7 @@ regex_ignitionsAvailable = re.compile(r'ignitionsAvailable\s?=\s?(\d+?)', re.IGN
 regex_autoIgnitionTemperature = re.compile(r'autoIgnitionTemperature\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
 regex_useUllageSimulation = re.compile(r'useUllageSimulation\s?=\s(true$|false$)', re.IGNORECASE)
 regex_ignitorResource = re.compile(r'^IGNITOR_RESOURCE$', re.IGNORECASE)
-regex_amount = re.compile(r'^amount\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
+regex_ECamount = re.compile(r'^amount\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
 
 regex_name = re.compile(r'^name\s?=\s?(\w+(\s?\+\s?\w+)?)', re.IGNORECASE)
 regex_type = re.compile(r'^type\s?=\s?(\w+(\s?\+\s?\w+)?)', re.IGNORECASE)
@@ -655,6 +445,14 @@ regex_amount = re.compile(r'^amount\s?=\s?(\w+)', re.IGNORECASE)
 regex_maxAmount = re.compile(r'^maxAmount\s?=\s?(\d+(\.\d*)?)%$', re.IGNORECASE)
 
 
+# Parcing arguments here
+argParcer = argparse.ArgumentParser(description="Converts data from RealFuels config to ODS file")
+argParcer.add_argument('input', type=str, help="Input file in RF config format")
+argParcer.add_argument('output', type=str, help="Output file in ODS format")
+args = argParcer.parse_args()
+cfg_inputfile = args.input
+cfg_outputfile = args.output
+
 # Reading raw RF config
 with open(cfg_inputfile, "r") as inputfile:
     raw_data = inputfile.readlines()
@@ -667,5 +465,45 @@ with open(cfg_inputfile, "r") as inputfile:
 previous = ""
 someNum = parcer(main_data, previous, 0)
 
+# Table header
+now = datetime.datetime.now()
+toExport.append(["C", "This file is generated by RF_unpacker ver" + __version__])
+toExport.append(["C", "Converter is written by " + __author__])
+toExport.append(["C", now.strftime("%Y-%m-%d %H:%M")])
+toExport.append(["C", "Source file: " + cfg_inputfile])
+toExport.append(["C", ""])
+toExport.append(["C", "How to use it:"])
+toExport.append(["C", "First column is indicator for later parsing"])
+toExport.append(["C", " 'H' means header, or comment. This lines will be ignored"])
+toExport.append(["C", " 'PRT' means 'PART'. Main part parameters are here"])
+toExport.append(["C", " 'ME' = 'ModuleEngine', you don't need to change anything here"])
+toExport.append(["C", " 'MRCS' = 'ModuleRCS, same as ModuleEngine"])
+toExport.append(["C", " 'ECMH' - Header for ModuleEngineConfigs, with common parameters"])
+toExport.append(["C", " 'EC' - One configuration for engine"])
+toExport.append(["C", " 'PP' - Propellant"])
+toExport.append(["C", " 'FT' - Fuel tank"])
+toExport.append(["C", " 'FL' - preloaded fuel in fuel tank (rarely used)"])
+toExport.append(["C", " '-1' in most parameters mean 'not used'"])
+toExport.append(["C", "      only exception is basemass parameter in ModularFuelTanks"])
+toExport.append(["C", ""])
+toExport.append(["C", ""])
+toExport.append(["C", ""])
+toExport.append(["C", ""])
+toExport.append(["C", ""])
+toExport.append(["C", "name", "mass", "cost", "entryCost", "maxTemp", "comment"])
+
+
+# Creating list to export, line by line
+# See functions for this operation in modules classes
 for part in parced:
-   print(part)
+    line = part.exportList()
+    for subline in line:
+        toExport.append(subline)
+
+# Write data to ODS file
+# Make sure that file is not opened
+# Note: file will be rewrited!
+exportedData = OrderedDict() # from collections import OrderedDict
+exportedData.update({"RF_CONFIG": toExport})
+pyexcel_ods3.save_data(cfg_outputfile, exportedData)
+
