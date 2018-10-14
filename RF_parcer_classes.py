@@ -3,12 +3,13 @@ class ModuleEngineIgnitorClass:
     ModuleEngineIgnitor generic configuration class (for engine's default configuration)
     """
 
-    def __init__(self):
-        self.ignitionsAvailable = -1
-        self.autoIgnitionTemperature = -1
-        self.useUllageSimulation = False
-        self.ignitorType = "Electric"
-        self.ignitorElectricChargeAmount = -1
+    def __init__(self, ignitionsAvailable = -1, autoIgnitionTemperature = -1,
+                 useUllageSimulation=False, ignitorType = "Electric", ignitorElectricChargeAmount = -1):
+        self.ignitionsAvailable = ignitionsAvailable
+        self.autoIgnitionTemperature = autoIgnitionTemperature
+        self.useUllageSimulation = useUllageSimulation
+        self.ignitorType = ignitorType
+        self.ignitorElectricChargeAmount = ignitorElectricChargeAmount
 
     def __str__(self):
         seq = ("\t *** MODULE_ENGINE_IGNITOR ***",
@@ -26,10 +27,10 @@ class ModuleFuelTanksClass:
     RealFuels ModuleFuelTanks configuration class
     """
 
-    def __init__(self):
-        self.basemass = -1024   # I usually use -1 to signal that parameter is absent in config, but in this case -1 is an actual parameter used by RF
-        self.volume = -1
-        self.type = "Default"
+    def __init__(self, basemass = -1024, volume = -1, type = "Default"):
+        self.basemass = basemass   # I usually use -1 to signal that parameter is absent in config, but in this case -1 is an actual parameter used by RF
+        self.volume = volume
+        self.type = type
         self.tanks = []
 
     def __str__(self):
@@ -62,10 +63,10 @@ class ModuleFuelTankInternal:
     Definition for internal 'TANK' submodule in ModuleFuelTanks
     """
 
-    def __init__(self):
-        self.name = ""
-        self.amount = ""
-        self.maxAmount = 0.0    # This is percentage! % sign should be added to final config
+    def __init__(self, name = "", amount = "", maxAmount = 0.0):
+        self.name = name
+        self.amount = amount
+        self.maxAmount = maxAmount    # This is percentage! % sign should be added to final config
 
     def __str__(self):
         seq = ("\t\t\tname = " + str(self.name),
@@ -79,11 +80,12 @@ class ModuleEngineClass:
     RealFuels ModuleEngine / ModuleEngineRF configuration class
     """
 
-    def __init__(self):
-        self.maxThrust = -1
-        self.heatProduction = -1
-        self.atmoCurveKey0 = -1
-        self.atmoCurveKey1 = -1
+    def __init__(self, maxThrust = -1.0, heatProduction = -1,
+                 atmoCurveKey0 = -1, atmoCurveKey1 = -1):
+        self.maxThrust = maxThrust
+        self.heatProduction = heatProduction
+        self.atmoCurveKey0 = atmoCurveKey0
+        self.atmoCurveKey1 = atmoCurveKey1
         self.propellants = []
 
 
@@ -103,11 +105,11 @@ class PropellantClass:
     RealFuels propellant class
     """
 
-    def __init__(self):
-        self.name = "none"
-        self.ratio = -1.0
-        self.drawGauge = False
-        self.flowMode = "none"
+    def __init__(self, name = "none", ratio = -1.0, drawGauge = False, flowMode = "none"):
+        self.name = name
+        self.ratio = ratio
+        self.drawGauge = drawGauge
+        self.flowMode = flowMode
 
     def __str__(self):
         seq = ("\t\t *** PROPELLANT ***",
@@ -155,14 +157,15 @@ class ModuleEngineConfigsClass:
     RealFuels ModuleEngineConfigs class definition
     """
 
-    def __init__(self):
-        self.techLevel = -1
-        self.origTechLevel = -1
-        self.type = "ModuleEnginesRF"
-        self.engineType = "None"
-        self.origMass = -1.0
-        self.defaultConfiguration = "None"
-        self.modded = False
+    def __init__(self, type = "ModuleEnginesRF", techLevel = -1, origTechLevel = -1, engineType = "None",
+                 origMass = -1.0, modded = False, defaultConfiguration = "None"):
+        self.techLevel = techLevel
+        self.origTechLevel = origTechLevel
+        self.type = type
+        self.engineType = engineType
+        self.origMass = origMass
+        self.defaultConfiguration = defaultConfiguration
+        self.modded = modded
         self.configurations = []
 
     def __str__(self):
@@ -203,14 +206,15 @@ class EngineConfigClass():
     Engine config (CONFIG module) class
     """
 
-    def __init__(self):
-        self.name = "none"
-        self.maxThrust = -1.0
-        self.heatProduction = False
-        self.ispSL = -1.0
-        self.ispV = -1.0
-        self.throttle = -1
-        self.thrusterPower = -1
+    def __init__(self, name = "none", maxThrust = -1.0, heatProduction = -1, ispSL = -1.0, ispV = -1.0,
+                 throttle = -1, thrusterPower = -1):
+        self.name = name
+        self.maxThrust = maxThrust
+        self.heatProduction = heatProduction
+        self.ispSL = ispSL
+        self.ispV = ispV
+        self.throttle = throttle
+        self.thrusterPower = thrusterPower
         self.propellants = []
         self.moduleEngineIgnitor = None
 

@@ -1,12 +1,11 @@
 """
 This is a simple parcer
 It converts configuration files for RealFuels mod (for Kerbal Space Program)
-to CSV human-readable format
-And back
+to ODS human-readable table format
 """
 __author__ = 'Snownoise'
 __license__ = "GNU GPLv3 "
-__version__ = "0.0.1"
+__version__ = "0.0.3"
 __maintainer__ = "Snownoise"
 __email__ = "snownoise@gmail.com"
 
@@ -479,7 +478,7 @@ toExport.append(["C", " 'PRT' means 'PART'. Main part parameters are here"])
 toExport.append(["C", " 'ME' = 'ModuleEngine', you don't need to change anything here"])
 toExport.append(["C", " 'MRCS' = 'ModuleRCS, same as ModuleEngine"])
 toExport.append(["C", " 'ECMH' - Header for ModuleEngineConfigs, with common parameters"])
-toExport.append(["C", " 'EC' - One configuration for engine"])
+toExport.append(["C", " 'EC' - Engine configuration"])
 toExport.append(["C", " 'PP' - Propellant"])
 toExport.append(["C", " 'FT' - Fuel tank"])
 toExport.append(["C", " 'FL' - preloaded fuel in fuel tank (rarely used)"])
