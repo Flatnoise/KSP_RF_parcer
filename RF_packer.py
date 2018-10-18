@@ -100,6 +100,14 @@ for line in importedData:
         moduleEngineRF = ModuleEngineClass(atmoCurveKey0 = line[5], atmoCurveKey1 = line[7])
         part.moduleEngine = moduleEngineRF
 
+    # ModuleRCS
+    elif line[0] == 'MRCS':
+        partException(part, lineCount)  # Raise exeption if part is not present
+        # Raise exeption of line length is wrong
+        if len(line) != 8: raise Exception("Syntax error/Wrong length in line " + str(lineCount))
+
+        moduleRCS = ModuleRCSClass(atmoCurveKey0 = line[5], atmoCurveKey1 = line[7])
+        part.moduleRCS = moduleRCS
 
     # ModuleEngineConfig, common parameters
     elif line[0] == 'ECMH':
@@ -225,5 +233,45 @@ if fuelTank:
 parced.append(part)
 
 
-# TODO
-# There should be part that writes all parced shit into RealFuel configuration file
+
+# Append some data to default engine module from list of configurations
+for item in parced:
+    if item.moduleEngine and item.moduleEngineConfigsModule:
+        defaultConfig = item.moduleEngineConfigsModule.defaultConfiguration
+
+        # This loop will find a default config name and adds data from this config to main ModuleEngine block
+        for config in item.moduleEngineConfigsModule.configurations:
+            if config.name == defaultConfig:
+                item.moduleEngine.maxThrust = config.maxThrust
+                item.moduleEngine.heatProduction = config.heatProduction
+
+                # If engineIgnitor is present in config, append it to the main part
+                if config.moduleEngineIgnitor:
+                    item.moduleEngineIgnitor = config.moduleEngineIgnitor
+
+                # If propellans are present in config, append it to the main part
+                if config.propellants:
+                    item.moduleEngine.propellants = config.propellants
+
+
+    elif item.moduleRCS and item.moduleEngineConfigsModule:
+        defaultConfig = item.moduleEngineConfigsModule.defaultConfiguration
+
+        # This loop will find a default config name and adds data from this config to main ModuleEngine block
+        for config in item.moduleEngineConfigsModule.configurations:
+            if config.name == defaultConfig:
+                item.moduleRCS.thrusterPower = config.thrusterPower
+                item.moduleRCS.heatProduction = config.heatProduction
+
+                # If propellans are present in config, append it to the main part
+                if config.propellants:
+                    item.moduleRCS.propellants = config.propellants
+
+
+# Writing RF config
+with open(cfg_outputfile, "w") as outputfile:
+    for item in parced:
+        cfgText = item.export2CFG()
+        for line in cfgText:
+            print (line)
+            outputfile.write(line + "\n")

@@ -5,7 +5,7 @@ to ODS human-readable table format
 """
 __author__ = 'Snownoise'
 __license__ = "GNU GPLv3 "
-__version__ = "0.0.3"
+__version__ = "0.0.1"
 __maintainer__ = "Snownoise"
 __email__ = "snownoise@gmail.com"
 
@@ -474,7 +474,7 @@ toExport.append(["C", ""])
 toExport.append(["C", "How to use it:"])
 toExport.append(["C", "First column is indicator for later parsing"])
 toExport.append(["C", " 'H' means header, or comment. This lines will be ignored"])
-toExport.append(["C", " 'PRT' means 'PART'. Main part parameters are here"])
+toExport.append(["C", " 'P' means 'PART'. Main part parameters are here"])
 toExport.append(["C", " 'ME' = 'ModuleEngine', you don't need to change anything here"])
 toExport.append(["C", " 'MRCS' = 'ModuleRCS, same as ModuleEngine"])
 toExport.append(["C", " 'ECMH' - Header for ModuleEngineConfigs, with common parameters"])
@@ -495,7 +495,7 @@ toExport.append(["C", "name", "mass", "cost", "entryCost", "maxTemp", "comment"]
 # Creating list to export, line by line
 # See functions for this operation in modules classes
 for part in parced:
-    line = part.exportList()
+    line = part.export2ODS()
     for subline in line:
         toExport.append(subline)
 

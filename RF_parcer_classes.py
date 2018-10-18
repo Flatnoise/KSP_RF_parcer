@@ -1,3 +1,12 @@
+"""
+Common classes and functions for RF_packer and RF_unpacker
+"""
+__author__ = 'Snownoise'
+__license__ = "GNU GPLv3 "
+__version__ = "0.0.1"
+__maintainer__ = "Snownoise"
+__email__ = "snownoise@gmail.com"
+
 class ModuleEngineIgnitorClass:
     """
     ModuleEngineIgnitor generic configuration class (for engine's default configuration)
@@ -21,6 +30,32 @@ class ModuleEngineIgnitorClass:
 
         return '\n'.join(seq)
 
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = [
+            "ModuleEngineIgnitor",
+            "{",
+            "  ignitionsAvailable = " + str(self.ignitionsAvailable)]
+        if str(self.useUllageSimulation).lower() == "false":
+            cfgData.append("  useUllageSimulation = False")
+        else:
+            cfgData.append("  useUllageSimulation = True")
+        if self.autoIgnitionTemperature != -1:
+            cfgData.append("  autoIgnitionTemperature = " + str(self.autoIgnitionTemperature))
+        cfgData.append("  ignitorType = " + str(self.ignitorType))
+        if self.ignitorElectricChargeAmount != -1:
+            cfgData.extend([
+                "  IGNITOR_RESOURCE",
+                "  {",
+                "    name = ElectricCharge",
+                "    amount = " + str(self.ignitorElectricChargeAmount),
+                "  }"])
+
+        cfgData.append("}")
+        return cfgData
+
 
 class ModuleFuelTanksClass:
     """
@@ -42,7 +77,24 @@ class ModuleFuelTanksClass:
             seq.append(str(tank))
         return '\n'.join(seq)
 
-    def exportList(self):
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = [
+            "MODULE",
+            "{",
+            "  name = ModuleFuelTanks",
+            "  type = " + str(self.type)]
+        if self.basemass != -1024: cfgData.append("  basemass = " + str(self.basemass))
+        if self.volume != -1: cfgData.append("  volume = " + str(self.volume))
+        if self.tanks:
+            for tank in self.tanks:
+                append2cfg(cfgData, tank)
+        cfgData.append("}")
+        return cfgData
+
+    def export2ODS(self):
         # Export all data in formatted list
         data = [["FT","","Fuel tank",
                  "Basemass",self.basemass,
@@ -55,7 +107,6 @@ class ModuleFuelTanksClass:
                     "maxAmount>",tank.maxAmount]
             data.append(line)
         return data
-
 
 
 class ModuleFuelTankInternal:
@@ -74,6 +125,19 @@ class ModuleFuelTankInternal:
                "\t\t\tmaxAmount = " + str(self.maxAmount))
         return '\n'.join(seq)
 
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = [
+            "TANK",
+            "{",
+            "  name = " + str(self.name),
+            "  amount = " + str(self.amount),
+            "  maxAmount = " + str(self.maxAmount) + "%",
+            "}"]
+        return cfgData
+
 
 class ModuleEngineClass:
     """
@@ -88,6 +152,34 @@ class ModuleEngineClass:
         self.atmoCurveKey1 = atmoCurveKey1
         self.propellants = []
 
+
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = [
+            " ",
+            "@MODULE[ModuleEngine*]",
+            "{",
+            "  @name = ModuleEnginesRF"]
+        if self.maxThrust != -1: cfgData.append("  @maxThrust = " + str(self.maxThrust))
+        if self.heatProduction != -1: cfgData.append("  @heatProduction = " + str(self.heatProduction))
+        cfgData.extend([
+            "  @atmosphereCurve",
+            "  {",
+            "    @key,0 = 0 " + str(self.atmoCurveKey0),
+            "    @key,1 = 1 " + str(self.atmoCurveKey1),
+            "  }"])
+        if self.propellants:
+            cfgData.extend([
+            "  !PROPELLANT[LiquidFuel] {}",
+            "  !PROPELLANT[Oxidizer] {}",
+            "  !PROPELLANT[MonoPropellant] {}"])
+            for propellant in self.propellants:
+                append2cfg(cfgData, propellant)
+        cfgData.append("}")
+
+        return cfgData
 
     def __str__(self):
         seq = ["\t *** MODULE_ENGINE_RF ***",
@@ -119,7 +211,7 @@ class PropellantClass:
                "\t\t\t\tflowMode = " + str(self.flowMode))
         return '\n'.join(seq)
 
-    def exportList(self):
+    def export2ODS(self):
         # Export all data in formatted list
         data = ["PP","","","","Propellant>",
                 self.name,
@@ -128,19 +220,63 @@ class PropellantClass:
                 "Flow>", self.flowMode]
         return data
 
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = [
+            "PROPELLANT",
+            "{",
+            "  name = " + self.name,
+            "  ratio = " + str(self.ratio)]
+
+        if str(self.drawGauge).lower() == "true": cfgData.append("  DrawGauge = True")
+        if self.flowMode: cfgData.append("  %resourceFlowMode = " + self.flowMode)
+        cfgData.append("}")
+        return cfgData
+
 
 class ModuleRCSClass:
     """
     Modification of stock Squad ModuleRCS in configs
     """
 
-    def __init__(self):
-        self.thrusterPower = -1
-        self.heatProduction = -1
-        self.atmoCurveKey0 = -1
-        self.atmoCurveKey1 = -1
+    def __init__(self, thrusterPower = -1.0, heatProduction = -1,
+                 atmoCurveKey0 = -1, atmoCurveKey1 = -1):
+        self.thrusterPower = thrusterPower
+        self.heatProduction = heatProduction
+        self.atmoCurveKey0 = atmoCurveKey0
+        self.atmoCurveKey1 = atmoCurveKey1
         self.propellants = []
 
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = [
+            " ",
+            "@MODULE[ModuleRCS*]",
+            "{"]
+        if self.thrusterPower != -1: cfgData.append("  @thrusterPower = " + str(self.thrusterPower))
+        if self.heatProduction != -1: cfgData.append("  @heatProduction = " + str(self.heatProduction))
+        cfgData.extend([
+            "  @atmosphereCurve",
+            "  {",
+            "    @key,0 = 0 " + str(self.atmoCurveKey0),
+            "    @key,1 = 1 " + str(self.atmoCurveKey1),
+            "  }"])
+        if self.propellants:
+            cfgData.extend([
+            "  !PROPELLANT[LiquidFuel] {}",
+            "  !PROPELLANT[Oxidizer] {}",
+            "  !PROPELLANT[MonoPropellant] {}"])
+            for propellant in self.propellants:
+                propellantData = propellant.export2CFG()
+                for item in propellantData:
+                    cfgData.append("  " + item)
+        cfgData.append("}")
+
+        return cfgData
 
     def __str__(self):
         seq = ["\t *** MODULE_RCS ***",
@@ -181,7 +317,7 @@ class ModuleEngineConfigsClass:
             seq.append(str(configuration))
         return '\n'.join(seq)
 
-    def exportList(self):
+    def export2ODS(self):
         # Export all data in formatted list
         data = [["ECMH","",
                  self.type,
@@ -195,11 +331,34 @@ class ModuleEngineConfigsClass:
                  "Ignitions", "AutoIgnitionTemp", "Ullage", "Ignitor", "Electr. to ignite"]]
 
         for configuration in self.configurations:
-            tmpData = configuration.exportList()
+            tmpData = configuration.export2ODS()
             for line in tmpData:
                 data.append(line)
 
         return data
+
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = [
+            " ","MODULE",
+            "{",
+            "  name = ModuleEngineConfigs",
+            "  type = " + str(self.type)]
+
+        if self.techLevel != -1: cfgData.append("  techLevel = " + str(self.techLevel))
+        if self.origTechLevel != -1: cfgData.append("  origTechLevel = " + str(self.origTechLevel))
+        if self.engineType != "": cfgData.append("  engineType = " + self.engineType)
+        if self.origMass != -1: cfgData.append("  origMass = " + str(self.origMass))
+        if self.defaultConfiguration != "": cfgData.append("  configuration = " + self.defaultConfiguration)
+        if self.modded != "": cfgData.append("  modded = " + str(self.modded))
+
+        for configuration in self.configurations:
+            append2cfg(cfgData, configuration)
+
+        cfgData.append("}")
+        return cfgData
 
 class EngineConfigClass():
     """
@@ -232,7 +391,7 @@ class EngineConfigClass():
         if self.moduleEngineIgnitor: seq.append(str(self.moduleEngineIgnitor))
         return '\n'.join(seq)
 
-    def exportList(self):
+    def export2ODS(self):
         # Export all data in formatted list
         tmpData = ["EC","","",
                  self.name,
@@ -256,8 +415,32 @@ class EngineConfigClass():
 
         # Add propellants, in separate lines
         for propellant in self.propellants:
-            data.append(propellant.exportList())
+            data.append(propellant.export2ODS())
         return data
+
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = [
+            " ","CONFIG",
+            "{",
+            "  name = " + self.name]
+        if self.maxThrust != -1: cfgData.append("  maxThrust = " + str(self.maxThrust))
+        if self.thrusterPower != -1: cfgData.append("  thrusterPower = " + str(self.thrusterPower))
+        if self.heatProduction != -1: cfgData.append("  heatProduction = " + str(self.heatProduction))
+        if self.propellants:
+            for propellant in self.propellants:
+                append2cfg(cfgData, propellant)
+        if self.ispSL != -1: cfgData.append("  IspSL = " + str(self.ispSL))
+        if self.ispV != -1: cfgData.append("  IspV = " + str(self.ispV))
+        if self.throttle != -1: cfgData.append("  throttle = " + str(self.throttle))
+        if self.moduleEngineIgnitor: append2cfg(cfgData, self.moduleEngineIgnitor)
+
+
+        cfgData.append("}")
+        return cfgData
+
 
 class PartClass:
     """
@@ -290,9 +473,41 @@ class PartClass:
         if self.moduleEngineConfigsModule: seq.append(str(self.moduleEngineConfigsModule))
         if self.moduleEngineIgnitor: seq.append(str(self.moduleEngineIgnitor))
         if self.moduleFuelTank: seq.append(str(self.moduleFuelTank))
+
         return '\n'.join(seq)
 
-    def exportList(self):
+    def export2CFG(self):
+        """
+        Will write part's data in KSP/RF standart configuration patch format
+        """
+        cfgData = ["@PART[" + self.name + "]:FOR[RealFuels] // " + self.comment, "{"]
+        if self.mass != -1: cfgData.append("  @mass = " + str(self.mass))
+        if self.cost != -1: cfgData.append("  @cost = " + str(self.cost))
+        if self.entryCost != -1: cfgData.append("  %entryCost = " + str(self.entryCost))
+        if self.maxTemp != -1: cfgData.append("  @maxTemp = " + str(self.maxTemp))
+
+        if self.moduleEngine: append2cfg(cfgData, self.moduleEngine)
+        if self.moduleRCS: append2cfg(cfgData, self.moduleRCS)
+        if self.moduleEngineConfigsModule: append2cfg(cfgData, self.moduleEngineConfigsModule)
+        if self.moduleEngineIgnitor:
+            cfgData.append("  !MODULE[ModuleEngineIgnitor] {}")
+            append2cfg(cfgData, self.moduleEngineIgnitor)
+        if self.moduleFuelTank:
+            cfgData.extend([
+            "  !RESOURCE[LiquidFuel] {}",
+            "  !RESOURCE[Oxidizer] {}",
+            "  !RESOURCE[MonoPropellant] {}",
+            "  !RESOURCE[SolidFuel] {}",
+            "  !RESOURCE[XenonGas] {}"])
+            append2cfg(cfgData, self.moduleFuelTank)
+
+        cfgData.append("}")
+        cfgData.append("")
+        cfgData.append("")
+        return cfgData
+
+
+    def export2ODS(self):
         # Export all data in formatted list
         # This is main parameters of the part
         data = [["P",
@@ -319,13 +534,13 @@ class PartClass:
 
         # Many lines for all engine configurations
         if self.moduleEngineConfigsModule:
-            tmpLines = self.moduleEngineConfigsModule.exportList()
+            tmpLines = self.moduleEngineConfigsModule.export2ODS()
             for line in tmpLines:
                 data.append(line)
 
         # ModuleFuelTanks here
         if self.moduleFuelTank:
-            tmpLines = self.moduleFuelTank.exportList()
+            tmpLines = self.moduleFuelTank.export2ODS()
             for line in tmpLines:
                 data.append(line)
 
@@ -334,3 +549,14 @@ class PartClass:
         data.append(["C"])
 
         return data
+
+def append2cfg(exportList, object):
+    """
+    This function is adding data from nested object (with export2CFG function) to selected list
+    :param exportList:
+    :param object:
+    :return:
+    """
+    moduleData = object.export2CFG()
+    for item in moduleData:
+        exportList.append("  " + item)
