@@ -19,7 +19,7 @@ Converting ODS to patch config (cfg)
 RF_packer.py <ODS file> <cfg file>
 ```
 
-### Prerequisites
+### Prerequests
 
 Understanding of RealFuels modules structure
 
