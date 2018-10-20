@@ -452,7 +452,7 @@ regex_origMass = re.compile(r'^origMass\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
 regex_configuration = re.compile(r'^configuration\s?=\s?(\w+(\s?\+\s?\w+)?)', re.IGNORECASE)
 regex_thrusterPower = re.compile(r'^([@|%])?thrusterPower\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
 regex_modded = re.compile(r'^modded\s?=\s(true$|false$)', re.IGNORECASE)
-regex_ignitions = re.compile(r'ignitions\s?=\s?(\d+?)', re.IGNORECASE)
+regex_ignitions = re.compile(r'ignitions\s?=\s?(\d+)', re.IGNORECASE)
 regex_ullage = re.compile(r'ullage\s?=\s?(true|false)', re.IGNORECASE)
 regex_pressureFed = re.compile(r'pressureFed\s?=\s?(true|false)', re.IGNORECASE)
 
