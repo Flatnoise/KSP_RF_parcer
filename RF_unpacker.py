@@ -73,7 +73,7 @@ def parcer(input_data, previous_line, previous_mode):
     # Ignitor Resouce
     elif regex_ignitorResource.findall(prev):
         mode = MODE_IGNITORRESOURCE
-        part = -1.0
+        part = {}
 
     # AtmosphereCurve
     elif (regex_atmosphereCurve.findall(prev) and
@@ -201,13 +201,12 @@ def parcer(input_data, previous_line, previous_mode):
         ### ****************************************************
         elif regex_name.findall(line) and mode == MODE_IGNITORRESOURCE:
             temp_value = regex_name.findall(line)[0][0]
-            temp_value = temp_value.strip()
-            temp_value = temp_value.lower()
-            if temp_value == "electriccharge": flag_electric_ignitor = True
+            part["name"] = temp_value
 
-        elif regex_ECamount.findall(line) and mode == MODE_IGNITORRESOURCE and flag_electric_ignitor:
+
+        elif regex_ECamount.findall(line) and mode == MODE_IGNITORRESOURCE:
             temp_value = regex_ECamount.findall(line)[0][0]
-            part = float(temp_value)
+            part["amount"] = float(temp_value)
 
         ### ****************************************************
         ### Propellant
@@ -312,7 +311,6 @@ def parcer(input_data, previous_line, previous_mode):
             temp_value = regex_modded.findall(line)[0]
             part.modded = str(temp_value)
 
-
         ### ****************************************************
         ### CONFIG
         ### ****************************************************
@@ -352,6 +350,21 @@ def parcer(input_data, previous_line, previous_mode):
             temp_value = regex_thrusterPower.findall(line)[0][1]
             part.thrusterPower = float(temp_value)
 
+        # ignitions
+        elif regex_ignitions.findall(line) and mode == MODE_CONFIG:
+            temp_value = regex_ignitions.findall(line)[0]
+            part.ignitions = int(temp_value)
+
+        # ullage
+        elif regex_ullage.findall(line) and mode == MODE_CONFIG:
+            temp_value = regex_ullage.findall(line)[0]
+            part.ullage = str(temp_value)
+
+        # pressure fed
+        elif regex_pressureFed.findall(line) and mode == MODE_CONFIG:
+            temp_value = regex_pressureFed.findall(line)[0]
+            part.pressureFed = str(temp_value)
+
         # Placeholder
         # elif regex_.findall(line) and mode == MODE_:
         #     temp_value = regex_.findall(line)[0][0]
@@ -375,7 +388,13 @@ def parcer(input_data, previous_line, previous_mode):
             elif subtype == MODE_PROPELLANT: part.propellants.append(subpart)       # Add propellant to list of propellants
             elif subtype == MODE_MODULEENGINECONFIGS: part.moduleEngineConfigsModule = subpart # Add ModuleEngineConfigs to part
             elif subtype == MODE_CONFIG: part.configurations.append(subpart)        # Add CONFIG to list of configuratons
-            elif subtype == MODE_IGNITORRESOURCE: part.ignitorElectricChargeAmount = float(subpart)    # Add electric charge for ignition to ignitor object
+            elif subtype == MODE_IGNITORRESOURCE:
+                if type(part) == ModuleEngineIgnitorClass:
+                    part.ignitorResource = subpart["name"]                          # Add resource name for ignition to ignitor object
+                    part.ignitorElectricChargeAmount = subpart["amount"]            # Add amount of resource to ignition to ignitor object
+                elif type(part) == EngineConfigClass:
+                    part.ignitorResource = subpart["name"]                          # Add resource name for ignition to config object
+                    part.ignitorAmount = subpart["amount"]                          # Add amount of resource to ignition to config object
             elif subtype == MODE_MODULEFUELTANK: part.moduleFuelTank = subpart      # Add ModuleFuelTank to part
             elif subtype == MODE_MODULETANKCONTENT: part.tanks.append(subpart)      # Add internal tank definition to ModuleFuelTank
 
@@ -433,6 +452,9 @@ regex_origMass = re.compile(r'^origMass\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
 regex_configuration = re.compile(r'^configuration\s?=\s?(\w+(\s?\+\s?\w+)?)', re.IGNORECASE)
 regex_thrusterPower = re.compile(r'^([@|%])?thrusterPower\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
 regex_modded = re.compile(r'^modded\s?=\s(true$|false$)', re.IGNORECASE)
+regex_ignitions = re.compile(r'ignitions\s?=\s?(\d+?)', re.IGNORECASE)
+regex_ullage = re.compile(r'ullage\s?=\s?(true|false)', re.IGNORECASE)
+regex_pressureFed = re.compile(r'pressureFed\s?=\s?(true|false)', re.IGNORECASE)
 
 regex_IspSL = re.compile(r'^IspSL\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
 regex_IspV = re.compile(r'^IspV\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)

@@ -54,7 +54,7 @@ fuelTank = None
 
 for line in importedData:
     lineCount += 1
-    if line[0] == 'C': continue     # Droppint off comments
+    if line[0] == 'C': continue     # Dropping off comments
 
     # Part import
     elif line[0] == 'P':
@@ -156,21 +156,21 @@ for line in importedData:
 
         # Create values for ModuleEngineIgnitor if present
         if lenL == 15:
-            ignitionsAvailable = line[10]
-            autoIgnitionTemperature = line[11]
-            ignitorType = line[13]
-            ignitorElectricChargeAmount = line[14]
+            engineConfig.ignitions = line[10]
+            engineConfig.ignitorResource = line[13]
+            engineConfig.ignitorAmount = line[14]
 
-            # Special case filtering for boolean value of "useUllageSimulation"
-            tmp = line[12]
+            # Special case filtering for boolean value of "ullage"
+            tmp = str(line[11])
             tmp = tmp.lower()
-            useUllageSimulation = False
-            if tmp == "true": useUllageSimulation = True
+            engineConfig.ullage = True
+            if tmp == "false": engineConfig.ullage = False
 
-            engineIgnitor = ModuleEngineIgnitorClass(ignitionsAvailable, autoIgnitionTemperature,
-                                                     useUllageSimulation, ignitorType, ignitorElectricChargeAmount)
-            engineConfig.moduleEngineIgnitor = engineIgnitor
-
+            # Special case filtering for boolean value of "pressureFed"
+            tmp = str(line[12])
+            tmp = tmp.lower()
+            engineConfig.pressureFed = False
+            if tmp == "true": engineConfig.pressureFed = True
 
     # Propellant
     elif line[0] == 'PP':
@@ -249,6 +249,15 @@ for item in parced:
                 if config.moduleEngineIgnitor:
                     item.moduleEngineIgnitor = config.moduleEngineIgnitor
 
+                # If engine ingition parameters are added outside of moduleEngineIgnitor
+                if config.ignitions != -1:
+                    item.ignitions = config.ignitions
+                    item.ullage = config.ullage
+                    item.pressureFed = config.pressureFed
+                    if config.ignitorAmount != -1:
+                        item.ignitorResource = config.ignitorResource
+                        item.ignitorAmount = config.ignitorAmount
+
                 # If propellans are present in config, append it to the main part
                 if config.propellants:
                     item.moduleEngine.propellants = config.propellants
@@ -273,5 +282,5 @@ with open(cfg_outputfile, "w") as outputfile:
     for item in parced:
         cfgText = item.export2CFG()
         for line in cfgText:
-            print (line)
+            # print (line)
             outputfile.write(line + "\n")

@@ -231,7 +231,7 @@ class PropellantClass:
             "  ratio = " + str(self.ratio)]
 
         if str(self.drawGauge).lower() == "true": cfgData.append("  DrawGauge = True")
-        if self.flowMode: cfgData.append("  %resourceFlowMode = " + self.flowMode)
+        if self.flowMode != "none": cfgData.append("  %resourceFlowMode = " + self.flowMode)
         cfgData.append("}")
         return cfgData
 
@@ -328,7 +328,7 @@ class ModuleEngineConfigsClass:
                  "Modded>", self.modded,
                  "Def.config>", self.defaultConfiguration],
                 ["C","","","Config Name", "Max thrust", "Heat prod", "IspSL", "IspV", "Thruster power", "Throttle",
-                 "Ignitions", "AutoIgnitionTemp", "Ullage", "Ignitor", "Electr. to ignite"]]
+                 "Ignitions", "Ullage", "Pressure fed", "Ignitor resource", "Ignitor amount"]]
 
         for configuration in self.configurations:
             tmpData = configuration.export2ODS()
@@ -366,7 +366,8 @@ class EngineConfigClass():
     """
 
     def __init__(self, name = "none", maxThrust = -1.0, heatProduction = -1, ispSL = -1.0, ispV = -1.0,
-                 throttle = -1, thrusterPower = -1):
+                 throttle = -1, thrusterPower = -1, ignitions = -1, ullage = True, pressureFed = False,
+                 ignitorResource = "None", ignitorAmount = -1):
         self.name = name
         self.maxThrust = maxThrust
         self.heatProduction = heatProduction
@@ -375,6 +376,11 @@ class EngineConfigClass():
         self.throttle = throttle
         self.thrusterPower = thrusterPower
         self.propellants = []
+        self.ignitions = ignitions
+        self.ullage = ullage
+        self.pressureFed = pressureFed
+        self.ignitorResource = ignitorResource
+        self.ignitorAmount = ignitorAmount
         self.moduleEngineIgnitor = None
 
     def __str__(self):
@@ -385,7 +391,13 @@ class EngineConfigClass():
                "\t\t\tIspSL = " + str(self.ispSL),
                "\t\t\tIspV = " + str(self.ispV),
                "\t\t\tthrusterPower = " + str(self.thrusterPower),
-               "\t\t\tthrottle = " + str(self.throttle)]
+               "\t\t\tthrottle = " + str(self.throttle),
+               "\t\t\tignitions = " + str(self.ignitions),
+               "\t\t\tullage = " + str(self.ullage),
+               "\t\t\tpressureFed = " + str(self.pressureFed),
+               "\t\t\t\tignitorResource = " + str(self.ignitorResource),
+               "\t\t\t\tamount = " + str(self.ignitorAmount)]
+
         for propellant in self.propellants:
             seq.append(str(propellant))
         if self.moduleEngineIgnitor: seq.append(str(self.moduleEngineIgnitor))
@@ -405,10 +417,18 @@ class EngineConfigClass():
         # Add ignitor's parameters to config line
         if self.moduleEngineIgnitor:
             tmpData.append(self.moduleEngineIgnitor.ignitionsAvailable)
-            tmpData.append(self.moduleEngineIgnitor.autoIgnitionTemperature)
             tmpData.append(self.moduleEngineIgnitor.useUllageSimulation)
+            tmpData.append("False")
             tmpData.append(self.moduleEngineIgnitor.ignitorType)
             tmpData.append(self.moduleEngineIgnitor.ignitorElectricChargeAmount)
+        else:
+            tmpData.extend([
+                self.ignitions,
+                self.ullage,
+                self.pressureFed,
+                self.ignitorResource,
+                self.ignitorAmount])
+
 
         data = []
         data.append(tmpData)
@@ -435,7 +455,25 @@ class EngineConfigClass():
         if self.ispSL != -1: cfgData.append("  IspSL = " + str(self.ispSL))
         if self.ispV != -1: cfgData.append("  IspV = " + str(self.ispV))
         if self.throttle != -1: cfgData.append("  throttle = " + str(self.throttle))
-        if self.moduleEngineIgnitor: append2cfg(cfgData, self.moduleEngineIgnitor)
+        if self.ignitions != -1:
+            cfgData.append("  ignitions = " + str(self.ignitions))
+            if str(self.ullage).lower() == "true":
+                cfgData.append("  ullage = True")
+            else:
+                cfgData.append("  ullage = False")
+            if str(self.pressureFed).lower() == "true":
+                cfgData.append("  pressureFed = True")
+            else:
+                cfgData.append("  pressureFed = False")
+            if self.ignitorAmount != -1:
+                cfgData.extend([
+                    "  IGNITOR_RESOURCE",
+                    "  {",
+                    "    name = " + self.ignitorResource,
+                    "    amount = " + str(self.ignitorAmount),
+                    "  }"])
+
+        # if self.moduleEngineIgnitor: append2cfg(cfgData, self.moduleEngineIgnitor)
 
 
         cfgData.append("}")
@@ -447,13 +485,19 @@ class PartClass:
     Main class for generic parts
     """
 
-    def __init__(self, name = "none", comment = "", mass = -1, cost = -1, entryCost = -1, maxTemp = -1):
+    def __init__(self, name = "none", comment = "", mass = -1, cost = -1, entryCost = -1, maxTemp = -1,
+                 ignitions = -1, ullage = True, pressureFed = False):
         self.name = name
         self.comment = comment
         self.mass = mass
         self.cost = cost
         self.entryCost = entryCost
         self.maxTemp = maxTemp
+        self.ignitions = ignitions
+        self.ullage = ullage
+        self.pressureFed = pressureFed
+        self.ignitorResource = "none"
+        self.ignitorAmount = -1
         self.moduleEngine = None
         self.moduleRCS = None
         self.moduleEngineConfigsModule = None
@@ -467,7 +511,10 @@ class PartClass:
                "\tmass = " + str(self.mass),
                "\tcost = " + str(self.cost),
                "\tentryCost = " + str(self.entryCost),
-               "\tmaxTemp = " + str(self.maxTemp)]
+               "\tmaxTemp = " + str(self.maxTemp),
+               "\tignitions = " + str(self.ignitions),
+               "\tullage = " + str(self.ullage),
+               "\tpressureFed = " + str(self.pressureFed)]
         if self.moduleEngine: seq.append(str(self.moduleEngine))
         if self.moduleRCS: seq.append(str(self.moduleRCS))
         if self.moduleEngineConfigsModule: seq.append(str(self.moduleEngineConfigsModule))
@@ -489,11 +536,28 @@ class PartClass:
         if self.moduleEngine: append2cfg(cfgData, self.moduleEngine)
         if self.moduleRCS: append2cfg(cfgData, self.moduleRCS)
         if self.moduleEngineConfigsModule: append2cfg(cfgData, self.moduleEngineConfigsModule)
-        if self.moduleEngineIgnitor:
-            cfgData.append("  !MODULE[ModuleEngineIgnitor] {}")
-            append2cfg(cfgData, self.moduleEngineIgnitor)
+        if self.ignitions != -1:
+            cfgData.append("  ignitions = " + str(self.ignitions))
+            if str(self.ullage).lower() == "true":
+                cfgData.append("  ullage = True")
+            else:
+                cfgData.append("  ullage = False")
+            if str(self.pressureFed).lower() == "true":
+                cfgData.append("  pressureFed = True")
+            else:
+                cfgData.append("  pressureFed = False")
+            if self.ignitorAmount != -1:
+                cfgData.extend([
+                    "  IGNITOR_RESOURCE",
+                    "  {",
+                    "    name = " + self.ignitorResource,
+                    "    amount = " + str(self.ignitorAmount),
+                    "  }"])
+        # if self.moduleEngineIgnitor:
+        #     cfgData.append("  !MODULE[ModuleEngineIgnitor] {}")
+        #     append2cfg(cfgData, self.moduleEngineIgnitor)
         if self.moduleFuelTank:
-            cfgData.extend([
+            cfgData.extend([" ",
             "  !RESOURCE[LiquidFuel] {}",
             "  !RESOURCE[Oxidizer] {}",
             "  !RESOURCE[MonoPropellant] {}",
