@@ -183,8 +183,9 @@ def parcer(input_data, previous_line, previous_mode):
         ### ****************************************************
         # ignitionsAvailable
         elif regex_ignitionsAvailable.findall(line) and mode == MODE_MODULEENGINEIGNITOR:
-            temp_value = regex_ignitionsAvailable.findall(line)[0][0]
+            temp_value = regex_ignitionsAvailable.findall(line)[0]
             part.ignitionsAvailable = int(float(temp_value))
+			
 
         # autoIgnitionTemperature
         elif regex_autoIgnitionTemperature.findall(line) and mode == MODE_MODULEENGINEIGNITOR:
@@ -433,7 +434,7 @@ regex_prop_drawGauge = re.compile(r'^DrawGauge\s?=\s?(True$|False$)', re.IGNOREC
 regex_prop_flow = re.compile(r'^[@|%](resourceFlowMode|flowMode)\s?=\s(\w+)', re.IGNORECASE)
 
 regex_moduleEngineIgnitor = re.compile(r'^ModuleEngineIgnitor$', re.IGNORECASE)
-regex_ignitionsAvailable = re.compile(r'ignitionsAvailable\s?=\s?(\d+?)', re.IGNORECASE)
+regex_ignitionsAvailable = re.compile(r'ignitionsAvailable\s?=\s?(\d+)', re.IGNORECASE)
 regex_autoIgnitionTemperature = re.compile(r'autoIgnitionTemperature\s?=\s?(\d+(\.\d*)?)', re.IGNORECASE)
 regex_useUllageSimulation = re.compile(r'useUllageSimulation\s?=\s(true$|false$)', re.IGNORECASE)
 regex_ignitorResource = re.compile(r'^IGNITOR_RESOURCE$', re.IGNORECASE)

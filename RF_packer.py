@@ -54,6 +54,7 @@ fuelTank = None
 
 for line in importedData:
     lineCount += 1
+    if len(line) < 1: continue      # Dropping off empty strings
     if line[0] == 'C': continue     # Dropping off comments
 
     # Part import
@@ -217,9 +218,6 @@ for line in importedData:
 
         else:
             raise Exception("Syntax error/No fuel tank in line " + str(lineCount))
-
-
-
 
 
 # Writing last part to the list of parts
